@@ -1,0 +1,146 @@
+Ad Server Specifications
+========================
+
+Targeted Ads Phase 2
+--------------------
+TA2 works by embedding a watermark in the video. We will need to test by playing watermarked broadcast streams into the TV. We need to test RF and HDMI broadcast video inputs. We will look into watermark embedding a little later. At the moment we need to consider the advert server required for testing and demos.
+
+TA2 can either use HbbTV or a native player to play the adverts. The native player relies on receiving a list of adverts in an XML file from a VAST server.
+
+Existing Server Setup
+---------------------
+Existing ad server on AWS. Server URL hbbtvtadev.samsungqbe.com
+There is a PEM file for the HTTPS certificate, but it is not yet applied.
+The ad server includes an HbbTV app (ta-app), and an open source VAST server called Revive.
+Media files are included, and are referenced by both the HbbTV app and the VAST server.
+
+New Requirements
+----------------
+Need a server suitable for BTS tests, and for SRUK tests and demos.
+
+The existing open source VAST server has the wrong feature set. We need a simple server that serves up pre-baked XML files depending on the URL parameters. For example:
+https://hbbtvtadev.samsungqbe.com/VAST/page.php?splice_event_id=1&channel_id=103
+
+This will use a look-up table to serve up a particular XML file. The XML format is generally fairly simple. Each Ad is in a <Ad></Ad> group. The Ad can have multiple MediaFiles, often with different resolutions, bit-rates. The Ad also contains tracker URLs. The VAST client on the TV should access the tracker URLs, so we will want the ad server to be able to log those events.
+
+We can start with making the following XML available. Demo videos are real adverts that we want to use for customer demos. The test videos can be taken from the existing TA1 advert set.
+|------------------------------------------------------------|
+| channel_id | splice_event_id | XML Description             |
+|------------------------------------------------------------|
+| 102,103    | 1               | 1x 20 second advert (demo)  |
+| 102,103    | 2               | 2x 20 second adverts (demo) |
+| 102,103    | 3               | 3x 30 second adverts (demo) |
+| 102,103    | 4               | 1x 20 second advert (test)  |
+| 102,103    | 5               | 2x 20 second adverts (test) |
+| 102,103    | 6               | 3x 20 second adverts (test) |
+|------------------------------------------------------------|
+
+We should also modify the HbbTV app so that it serves up the same adverts as the XML file based on the channel_id and splice_event_id parameters.
+
+
+Example XML
+-----------
+<VAST xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.0" xsi:noNamespaceSchemaLocation="vast.xsd">
+<Ad id="First">
+	<InLine>
+		<AdSystem>
+			<![CDATA[ Revive Adserver ]]>
+		</AdSystem>
+	<AdTitle>
+		<![CDATA[ Ali Express ]]>
+	</AdTitle>
+	<Description>
+		<![CDATA[ Inline Video Ad ]]>
+	</Description>
+	<Impression id="primaryAdServer">
+		<![CDATA[ http://63.34.111.39/revive/www/delivery/lg.php?bannerid=4&campaignid=1&zoneid=1&cb=52c8d1d18f ]]>
+	</Impression>
+	<Creatives>
+		<Creative sequence="1" id="4">
+			<Linear>
+				<Duration>00:00:19</Duration>
+				<MediaFiles>
+					<MediaFile delivery="progressive" bitrate="400" width="640" height="480" type="video/mp4">
+						<![CDATA[ http://hbbtvtadev.samsungqbe.com/ta-app/media/4.mp4 ]]>
+					</MediaFile>
+				</MediaFiles>
+				<TrackingEvents>
+					<Tracking event="start">
+						<![CDATA[ http://63.34.111.39/revive/www/delivery/fc.php?script=videoAds:vastEvent&bannerid=4&zoneid=1&event=start ]]>
+					</Tracking>
+					<Tracking event="midpoint">
+						<![CDATA[ http://63.34.111.39/revive/www/delivery/fc.php?script=videoAds:vastEvent&bannerid=4&zoneid=1&event=midpoint ]]>
+					</Tracking>
+					<Tracking event="firstQuartile">
+						<![CDATA[ http://63.34.111.39/revive/www/delivery/fc.php?script=videoAds:vastEvent&bannerid=4&zoneid=1&event=firstquartile ]]>
+					</Tracking>
+					<Tracking event="thirdQuartile">
+						<![CDATA[ http://63.34.111.39/revive/www/delivery/fc.php?script=videoAds:vastEvent&bannerid=4&zoneid=1&event=thirdquartile ]]>
+					</Tracking>
+					<Tracking event="complete">
+						<![CDATA[ http://63.34.111.39/revive/www/delivery/fc.php?script=videoAds:vastEvent&bannerid=4&zoneid=1&event=complete ]]>
+					</Tracking>
+					<Tracking event="mute">
+						<![CDATA[ http://63.34.111.39/revive/www/delivery/fc.php?script=videoAds:vastEvent&bannerid=4&zoneid=1&event=mute ]]>
+					</Tracking>
+					<Tracking event="unmute">
+						<![CDATA[ http://63.34.111.39/revive/www/delivery/fc.php?script=videoAds:vastEvent&bannerid=4&zoneid=1&event=unmute ]]>
+					</Tracking>
+				</TrackingEvents>
+			</Linear>
+		</Creative>
+	</Creatives>
+	</InLine>
+</Ad>
+<Ad id="Second">
+	<InLine>
+	<AdSystem>
+		<![CDATA[ Revive Adserver ]]>
+	</AdSystem>
+	<AdTitle>
+		<![CDATA[ Ali Express ]]>
+	</AdTitle>
+	<Description>
+		<![CDATA[ Inline Video Ad ]]>
+	</Description>
+	<Impression id="primaryAdServer">
+		<![CDATA[ http://63.34.111.39/revive/www/delivery/lg.php?bannerid=4&campaignid=1&zoneid=1&cb=52c8d1d18f ]]>
+	</Impression>
+	<Creatives>
+		<Creative sequence="1" id="4">
+			<Linear>
+				<Duration>00:00:19</Duration>
+				<MediaFiles>
+					<MediaFile delivery="progressive" bitrate="400" width="640" height="480" type="video/mp4">
+						<![CDATA[ http://hbbtvtadev.samsungqbe.com/ta-app/media/4.mp4 ]]>
+					</MediaFile>
+				</MediaFiles>
+				<TrackingEvents>
+					<Tracking event="start">
+						<![CDATA[ http://63.34.111.39/revive/www/delivery/fc.php?script=videoAds:vastEvent&bannerid=4&zoneid=1&event=start ]]>
+					</Tracking>
+					<Tracking event="midpoint">
+						<![CDATA[ http://63.34.111.39/revive/www/delivery/fc.php?script=videoAds:vastEvent&bannerid=4&zoneid=1&event=midpoint ]]>
+					</Tracking>
+					<Tracking event="firstQuartile">
+						<![CDATA[ http://63.34.111.39/revive/www/delivery/fc.php?script=videoAds:vastEvent&bannerid=4&zoneid=1&event=firstquartile ]]>
+					</Tracking>
+					<Tracking event="thirdQuartile">
+						<![CDATA[ http://63.34.111.39/revive/www/delivery/fc.php?script=videoAds:vastEvent&bannerid=4&zoneid=1&event=thirdquartile ]]>
+					</Tracking>
+					<Tracking event="complete">
+						<![CDATA[ http://63.34.111.39/revive/www/delivery/fc.php?script=videoAds:vastEvent&bannerid=4&zoneid=1&event=complete ]]>
+					</Tracking>
+					<Tracking event="mute">
+						<![CDATA[ http://63.34.111.39/revive/www/delivery/fc.php?script=videoAds:vastEvent&bannerid=4&zoneid=1&event=mute ]]>
+					</Tracking>
+					<Tracking event="unmute">
+						<![CDATA[ http://63.34.111.39/revive/www/delivery/fc.php?script=videoAds:vastEvent&bannerid=4&zoneid=1&event=unmute ]]>
+					</Tracking>
+				</TrackingEvents>
+			</Linear>
+		</Creative>
+	</Creatives>
+</InLine>
+</Ad>
+</VAST>
